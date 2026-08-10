@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>nanochat_mini</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+CiAgPHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjU4IiBoZWlnaHQ9IjU4IiByeD0iMTQiIGZpbGw9IiNmZmMyM2MiIHN0cm9rZT0iIzE2MTUxZiIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgPHBhdGggZD0iTTM2IDggTDE4IDM2IEwyOSAzNiBMMjYgNTYgTDQ3IDI2IEwzNSAyNiBaIiBmaWxsPSIjMTYxNTFmIi8+Cjwvc3ZnPg==">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+  :root{
+    color-scheme: light dark;
+    --bg: #fbfaf6;
+    --panel: #ffffff;
+    --ink: #16151f;
+    --ink-soft: #55535f;
+    --blue: #3d5afe;
+    --pink: #ff2e63;
+    --lime: #00c896;
+    --yellow: #ffc23c;
+    --shadow-c: #16151f;
+    --chip-ink: #16151f;    /* testo sempre scuro sulle "etichette" colorate (gialle/lime) */
+  }
+  *{box-sizing:border-box;}
+  html{background:#fbfaf6;}
+  html,body{margin:0; min-height:100%;}
+
+  /* tema scuro vero e proprio: si attiva da solo se il telefono e in
+     modalita scura. Stessa struttura, colori invertiti, sempre leggibile. */
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg: #15141f;
+      --panel: #221f30;
+      --ink: #f5f3fa;
+      --ink-soft: #b8b4c9;
+      --shadow-c: #3d5afe;
+    }
+    html{background:#15141f;}
+  }
+  body{
+    font-family:'Space Mono', monospace;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 8% 8%, rgba(61,90,254,.10), transparent 40%),
+      radial-gradient(circle at 95% 15%, rgba(255,46,99,.09), transparent 42%),
+      var(--bg);
+    min-height:100vh;
+    padding:0 0 70px;
+  }
+  .wrap{max-width:640px;margin:0 auto; padding:0 18px;}
+
+  /* ---------- HERO ---------- */
+  .hero{ position:relative; padding:36px 0 8px; overflow:hidden; }
+  #netCanvas{ display:block; width:100%; height:170px; margin-bottom:8px; }
+  .brandRow{display:flex; align-items:center; gap:10px; margin-bottom:8px;}
+  .app-icon{
+    width:32px; height:32px; border-radius:10px; flex:none;
+    background:var(--yellow);
+    border:2.5px solid var(--chip-ink);
+    color:var(--chip-ink); display:flex; align-items:center; justify-content:center;
+    font-size:15px; font-weight:700;
+    box-shadow:3px 3px 0 var(--shadow-c);
+  }
+  .eyebrow{
+    font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--chip-ink); font-weight:700; margin:0;
+    display:flex; align-items:center; gap:7px;
+    background:var(--lime); border:2px solid var(--chip-ink); border-radius:99px;
+    padding:4px 10px 4px 8px; width:fit-content;
+  }
+  .eyebrow::before{
+    content:''; width:6px;height:6px;border-radius:50%;
+    background:var(--chip-ink);
+    animation:blink 1.4s ease-in-out infinite;
+  }
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:.25;}}
+  h1{
+    font-family:'Fredoka', sans-serif;
+    font-weight:700;
+    font-size:clamp(32px,8.5vw,46px);
+    margin:14px 0 12px;
+    line-height:0.98;
+    letter-spacing:-0.01em;
+    color:var(--ink);
+  }
+  h1 em{
+    font-style:normal;
+    color:var(--pink);
+    -webkit-text-stroke: 0px;
+    position:relative;
+  }
+  .lede{color:var(--ink-soft); font-size:14px; line-height:1.7; max-width:50ch;}
+
+  .pipeline{
+    display:flex; gap:8px; margin:22px 0 4px;
+  }
+  .step{
+    flex:1; padding:10px 8px; font-size:11px; text-align:center; font-weight:700;
+    color:var(--ink-soft); border:2.5px solid var(--ink); border-radius:11px;
+    background:var(--panel);
+    transition:background .25s ease, color .25s ease, transform .15s ease;
+  }
+  .step .n{display:block; font-size:9px; opacity:.55; margin-bottom:3px; letter-spacing:.1em;}
+  .step.active{color:var(--chip-ink); background:var(--yellow); transform:translateY(-2px); box-shadow:3px 3px 0 var(--shadow-c);}
+  .step.done{color:var(--chip-ink); background:var(--lime);}
+  .step.done .n{opacity:.85;}
+
+  /* ---------- CARDS ---------- */
+  .card{
+    background:var(--panel);
+    border:2.5px solid var(--ink);
+    border-radius:20px;
+    padding:22px;
+    margin-top:20px;
+    box-shadow:6px 6px 0 var(--shadow-c);
+  }
+  .card h2{
+    font-family:'Fredoka', sans-serif; font-weight:700;
+    font-size:19px; margin:0 0 6px; letter-spacing:-.005em;
+  }
+  .card .hint{color:var(--ink-soft); font-size:12.5px; margin-bottom:16px; line-height:1.6;}
+
+  button{
+    font-family:'Fredoka', sans-serif; font-weight:600;
+    border:2.5px solid var(--ink); border-radius:12px;
+    padding:12px 20px;
+    font-size:14px;
+    cursor:pointer;
+    background:var(--blue); color:#fff;
+    transition:transform .08s ease, box-shadow .08s ease;
+    box-shadow:4px 4px 0 var(--shadow-c);
+  }
+  button:hover:not(:disabled){transform:translate(-1px,-1px); box-shadow:5px 5px 0 var(--shadow-c);}
+  button:active:not(:disabled){transform:translate(3px,3px); box-shadow:1px 1px 0 var(--shadow-c);}
+  button:disabled{opacity:.5; cursor:not-allowed; box-shadow:4px 4px 0 var(--shadow-c);}
+  #sendBtn{padding:12px 18px;}
+
+  .progress-row{display:flex; align-items:center; gap:12px; margin-top:18px;}
+  .bar{flex:1; height:16px; background:var(--panel); border:2.5px solid var(--ink); border-radius:99px; overflow:hidden;}
+  .bar > div{
+    height:100%; width:0%;
+    background:repeating-linear-gradient(45deg, var(--lime), var(--lime) 8px, #00b386 8px, #00b386 16px);
+    transition:width .15s linear;
+  }
+  .stat{font-size:11px; color:var(--ink-soft); min-width:150px; text-align:right; font-weight:700;}
+
+  .log{
+    margin-top:16px; background:#14131f; color:var(--lime);
+    border:2.5px solid #14131f;
+    border-radius:12px; padding:13px 15px; font-size:11px;
+    max-height:140px; overflow-y:auto; line-height:1.7;
+  }
+  .log div{opacity:.85;}
+  .log div.hi{color:var(--yellow); opacity:1;}
+
+  /* ---------- CHAT ---------- */
+  .chatlog{
+    display:flex; flex-direction:column; gap:12px;
+    max-height:380px; overflow-y:auto; padding:2px 2px 4px;
+    margin-bottom:16px;
+  }
+  .row{display:flex; gap:8px; align-items:flex-end;}
+  .row.user{flex-direction:row-reverse;}
+  .avatar{
+    width:28px;height:28px;border-radius:9px; flex:none;
+    display:flex;align-items:center;justify-content:center;
+    font-size:13px; font-weight:700;
+    border:2.5px solid var(--ink);
+  }
+  .avatar.bot{background:var(--yellow); color:var(--chip-ink);}
+  .avatar.user{background:var(--panel); color:var(--ink-soft);}
+  .bubble{
+    max-width:76%; padding:11px 14px; border-radius:14px;
+    font-size:13.5px; line-height:1.55;
+    border:2.5px solid var(--ink);
+  }
+  .row.bot .bubble{background:var(--panel); border-bottom-left-radius:4px; box-shadow:3px 3px 0 var(--shadow-c);}
+  .row.user .bubble{background:var(--blue); color:#fff; border-bottom-right-radius:4px; font-weight:500; box-shadow:3px 3px 0 var(--shadow-c);}
+
+  .inputRow{display:flex; gap:8px;}
+  input[type=text], input[type=email], input[type=password]{
+    -webkit-appearance:none; appearance:none;
+    flex:1; padding:12px 15px; border-radius:12px;
+    border:2.5px solid var(--ink); font-family:inherit; font-size:14px;
+    background:var(--panel); color:var(--ink);
+  }
+  input[type=text]::placeholder, input[type=email]::placeholder, input[type=password]::placeholder{color:var(--ink-soft);}
+  input[type=text]:focus, input[type=email]:focus, input[type=password]:focus{outline:none; box-shadow:3px 3px 0 var(--shadow-c);}
+
+  .badge{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:11px; background:var(--lime); border:2px solid var(--chip-ink);
+    color:var(--chip-ink); padding:6px 12px; border-radius:99px; font-weight:700;
+    margin-top:14px;
+  }
+  footer{margin-top:32px; font-size:11px; color:var(--ink-soft); text-align:center; line-height:1.6;}
+  @media (prefers-reduced-motion: reduce){
+    .eyebrow::before{animation:none;}
+  }
+
+  /* ---------- HOME / BOT LIST ---------- */
+  #viewHome{margin-top:22px;}
+  .homeHead{display:flex; flex-direction:column; gap:12px; margin-bottom:4px;}
+  .homeHeadTop{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+  .homeHead h2{font-family:'Fredoka',sans-serif; font-weight:700; font-size:20px; margin:0; letter-spacing:-.01em;}
+  .homeBtns{display:flex; gap:8px; flex:none;}
+  #newBotBtn{padding:9px 14px; font-size:12.5px; background:var(--pink);}
+  #botGrid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px;}
+  @media (max-width:420px){ #botGrid{grid-template-columns:1fr;} }
+  .botCard{
+    background:var(--panel);
+    border:2.5px solid var(--ink); border-radius:16px;
+    padding:16px; cursor:pointer;
+    transition:transform .1s ease, box-shadow .1s ease;
+    display:flex; flex-direction:column; gap:12px;
+    box-shadow:4px 4px 0 var(--shadow-c);
+  }
+  .botCard:hover{transform:translate(-1px,-1px); box-shadow:5px 5px 0 var(--shadow-c);}
+  .botCard .topRow{display:flex; align-items:flex-start; justify-content:space-between;}
+  .botCard .icon{
+    width:34px;height:34px;border-radius:10px;
+    background:var(--bot-hue, var(--yellow));
+    border:2.5px solid var(--chip-ink);
+    color:var(--chip-ink); display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:700;
+  }
+  .botCard .arrow{color:var(--ink-soft); font-size:14px; opacity:.6; transition:opacity .15s ease, transform .15s ease;}
+  .botCard:hover .arrow{opacity:1; transform:translateX(2px);}
+  .botCard .name{font-family:'Fredoka',sans-serif; font-weight:700; font-size:14.5px; letter-spacing:-.005em;}
+  .botCard .meta{font-size:10.5px; color:var(--ink-soft); font-weight:700;}
+  .emptyState{
+    border:2.5px dashed var(--ink); border-radius:16px; padding:30px 18px;
+    text-align:center; color:var(--ink-soft); font-size:12.5px; line-height:1.7;
+    grid-column:1/-1; background:var(--panel);
+  }
+
+  button.ghost{
+    background:var(--panel); color:var(--ink); border:2.5px solid var(--ink);
+    font-size:12px; padding:8px 13px; box-shadow:3px 3px 0 var(--shadow-c);
+  }
+  button.ghost:hover:not(:disabled){color:var(--ink);}
+  button.danger{color:#fff; background:var(--pink);}
+  .chatHead{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
+
+  /* ---------- AUTH ---------- */
+  .authError{
+    background:#fff0f0; border:2.5px solid var(--pink); color:var(--pink);
+    font-size:12px; padding:9px 12px; border-radius:10px; margin-top:12px; font-weight:700;
+  }
+  .whoami{font-size:11.5px; color:var(--ink-soft); margin-top:2px; font-weight:700;}
+  .authTabs{
+    display:flex; gap:6px; background:var(--bg); border:2.5px solid var(--ink);
+    border-radius:13px; padding:4px; margin-bottom:16px;
+  }
+  .authTab{
+    flex:1; background:transparent; color:var(--ink-soft); box-shadow:none; border:none;
+    padding:9px 10px; font-size:13px; border-radius:9px; font-weight:700;
+  }
+  .authTab:hover:not(:disabled){transform:none; color:var(--ink);}
+  .authTab.active{background:var(--yellow); color:var(--chip-ink); box-shadow:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <canvas id="netCanvas"></canvas>
+    <div class="brandRow">
+      <div class="app-icon">⚡</div>
+      <div class="eyebrow">100% nel browser · login senza email</div>
+    </div>
+    <h1>nano<em>chat</em>_mini</h1>
+    <p class="lede">Una piccola rete neurale che impari a parlare, allenata qui davanti a te. Stessa idea del nanochat vero — tokenizer, training, chat — ma in scala minuscola, dentro una pagina.</p>
+    <div class="pipeline">
+      <div class="step done" id="stepTok"><span class="n">01</span>tokenizer</div>
+      <div class="step" id="stepTrain"><span class="n">02</span>training</div>
+      <div class="step" id="stepChat"><span class="n">03</span>chat</div>
+    </div>
+  </div>
+
+  <div class="card" id="viewAuth">
+    <div class="authTabs">
+      <button type="button" class="authTab active" id="tabRegister">Crea account</button>
+      <button type="button" class="authTab" id="tabLogin">Accedi</button>
+    </div>
+    <p class="hint" id="authHint">Scegli un'email e una password — resta salvato solo su questo browser, nessuna email viene davvero inviata.</p>
+    <div class="inputRow" style="flex-direction:column; gap:10px;">
+      <input type="email" id="authUsername" placeholder="Email" autocomplete="off" maxlength="60">
+      <input type="password" id="authPassword" placeholder="Password" autocomplete="off" maxlength="60">
+    </div>
+    <div id="authError" class="authError" style="display:none;"></div>
+    <button id="authSubmitBtn" style="margin-top:14px; width:100%;">Crea account</button>
+    <p class="hint" style="margin-top:16px; margin-bottom:0;">Attenzione: l'account resta salvato solo su questo browser/dispositivo, non su un server — se cambi telefono o computer dovrai ricrearlo.</p>
+  </div>
+
+  <div id="viewHome" style="display:none;">
+    <div class="homeHead">
+      <h2>I tuoi chatbot</h2>
+      <div class="homeHeadTop">
+        <div class="whoami" id="whoami"></div>
+        <div class="homeBtns">
+          <button id="newBotBtn">+ nuovo chatbot</button>
+          <button id="logoutBtn" class="ghost">esci</button>
+        </div>
+      </div>
+    </div>
+    <p class="hint" style="margin:-4px 0 14px;">Salvati in questo browser — li ritrovi ogni volta che riapri la pagina, senza riallenarli.</p>
+    <div id="botGrid"></div>
+  </div>
+
+  <div class="card" id="viewTrain" style="display:none;">
+    <h2>Allena un nuovo chatbot</h2>
+    <p class="hint">Legge centinaia di frasi di esempio e impara a prevedere la parola successiva. Qualche decina di secondi, guarda la rete accendersi qui sopra.</p>
+    <button id="trainBtn">▶ Avvia il training</button>
+    <div class="progress-row">
+      <div class="bar"><div id="barFill"></div></div>
+      <div class="stat" id="statText">pronto</div>
+    </div>
+    <div class="log" id="log"></div>
+
+    <div id="saveBox" style="display:none; margin-top:18px; border-top:2px solid var(--ink); padding-top:18px;">
+      <p class="hint" style="margin-bottom:10px;">Training finito! Dagli un nome per salvarlo:</p>
+      <div class="inputRow">
+        <input type="text" id="botNameInput" placeholder="es: Nano" autocomplete="off" maxlength="24">
+        <button id="saveBotBtn">Salva</button>
+      </div>
+      <button id="skipSaveBtn" class="ghost" style="margin-top:10px;">chatta senza salvare →</button>
+    </div>
+  </div>
+
+  <div class="card" id="viewChat" style="display:none;">
+    <div class="chatHead">
+      <button id="backBtn" class="ghost">← i tuoi chatbot</button>
+      <button id="deleteBotBtn" class="ghost danger" style="display:none;">elimina</button>
+    </div>
+    <h2 id="chatTitle">Chatta</h2>
+    <p class="hint">Risponde bene su quello che ha imparato, sul resto improvvisa — è normale per un modello così piccolo.</p>
+    <div class="chatlog" id="chatlog"></div>
+    <div class="inputRow">
+      <input type="text" id="userInput" placeholder="Scrivi qualcosa, es: ciao" autocomplete="off">
+      <button id="sendBtn">→</button>
+    </div>
+    <div class="badge" id="paramBadge"></div>
+  </div>
+
+  <footer>tokenizer a parole · embedding + rete feed-forward · backpropagation scritta in javascript · salvataggio nel browser (localStorage)</footer>
+</div>
+
+<script>
+// ============================================================
+// SIGNATURE: rete neurale animata (canvas)
+// ============================================================
+const canvas = document.getElementById('netCanvas');
+const ctx2d = canvas.getContext('2d');
+let netActivity = 0.12; // 0..1, sale col training
+let pulses = []; // segnali che attraversano la rete
+const LAYER_SIZES = [4,6,6,4];
+let nodePositions = [];
+
+function resizeCanvas(){
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * devicePixelRatio;
+  canvas.height = 180 * devicePixelRatio;
+  canvas.style.height = '180px';
+  layoutNodes();
+}
+function layoutNodes(){
+  nodePositions = [];
+  const w = canvas.width, h = canvas.height;
+  const layerGap = w / (LAYER_SIZES.length+1);
+  LAYER_SIZES.forEach((count, li)=>{
+    const nodes = [];
+    const gap = h / (count+1);
+    for(let i=0;i<count;i++){
+      nodes.push({x: layerGap*(li+1), y: gap*(i+1)});
+    }
+    nodePositions.push(nodes);
+  });
+}
+window.addEventListener('resize', resizeCanvas);
+
+function spawnPulse(){
+  const li = Math.floor(Math.random()*(LAYER_SIZES.length-1));
+  const from = Math.floor(Math.random()*LAYER_SIZES[li]);
+  const to = Math.floor(Math.random()*LAYER_SIZES[li+1]);
+  pulses.push({li, from, to, t:0, speed: 0.03+Math.random()*0.02});
+}
+
+function drawNetwork(){
+  const w=canvas.width, h=canvas.height;
+  ctx2d.clearRect(0,0,w,h);
+
+  // connections
+  for(let li=0; li<nodePositions.length-1; li++){
+    nodePositions[li].forEach(a=>{
+      nodePositions[li+1].forEach(b=>{
+        ctx2d.strokeStyle = `rgba(61,90,254,${0.12 + netActivity*0.18})`;
+        ctx2d.lineWidth = 2*devicePixelRatio;
+        ctx2d.beginPath();
+        ctx2d.moveTo(a.x,a.y); ctx2d.lineTo(b.x,b.y);
+        ctx2d.stroke();
+      });
+    });
+  }
+
+  // pulses traveling along connections
+  pulses.forEach(p=>{
+    p.t += p.speed;
+    const a = nodePositions[p.li][p.from];
+    const b = nodePositions[p.li+1][p.to];
+    const x = a.x + (b.x-a.x)*p.t;
+    const y = a.y + (b.y-a.y)*p.t;
+    const grad = ctx2d.createRadialGradient(x,y,0,x,y,10*devicePixelRatio);
+    grad.addColorStop(0, 'rgba(255,46,99,0.95)');
+    grad.addColorStop(1, 'rgba(255,46,99,0)');
+    ctx2d.fillStyle = grad;
+    ctx2d.beginPath();
+    ctx2d.arc(x,y,10*devicePixelRatio,0,Math.PI*2);
+    ctx2d.fill();
+  });
+  pulses = pulses.filter(p=>p.t<1);
+
+  // nodes
+  nodePositions.forEach((layer, li)=>{
+    layer.forEach(n=>{
+      const r = 4*devicePixelRatio + netActivity*2.2*devicePixelRatio;
+      const glow = ctx2d.createRadialGradient(n.x,n.y,0,n.x,n.y,r*3);
+      glow.addColorStop(0, `rgba(61,90,254,${0.30+netActivity*0.35})`);
+      glow.addColorStop(1, 'rgba(61,90,254,0)');
+      ctx2d.fillStyle = glow;
+      ctx2d.beginPath(); ctx2d.arc(n.x,n.y,r*3,0,Math.PI*2); ctx2d.fill();
+
+      ctx2d.fillStyle = `rgba(255,194,60,${0.7+netActivity*0.3})`;
+      ctx2d.beginPath(); ctx2d.arc(n.x,n.y,r,0,Math.PI*2); ctx2d.fill();
+      ctx2d.lineWidth = 2*devicePixelRatio;
+      ctx2d.strokeStyle = `rgba(22,21,31,${0.5+netActivity*0.4})`;
+      ctx2d.stroke();
+    });
+  });
+
+  if(Math.random() < 0.02 + netActivity*0.12) spawnPulse();
+  requestAnimationFrame(drawNetwork);
+}
+resizeCanvas();
+drawNetwork();
+
+// ============================================================
+// DATASET — genera centinaia di coppie domanda/risposta
+// Mix di frasi scritte a mano (personalita, battute, chiacchiere)
+// + frasi generate (numeri, capitali, animali, pianeti, tabelline...)
+// ============================================================
+function buildPairs(){
+  const handwritten = [
+    ["ciao","ciao come stai"],
+    ["ciao come stai","sto bene grazie e tu"],
+    ["come ti chiami","mi chiamo nanochat mini sono un piccolo modello"],
+    ["chi sei","sono un piccolo modello di linguaggio creato per imparare a chattare"],
+    ["quanti anni hai","non ho un eta sono un programma"],
+    ["cosa fai","parlo con te e provo a rispondere alle tue domande"],
+    ["ti piace giocare","mi piace molto chattare con te"],
+    ["qual e il tuo colore preferito","mi piace il blu e a te"],
+    ["qual e il tuo gioco preferito","non gioco davvero ma mi piace parlarne con te"],
+    ["cosa mangi","io non mangio sono un programma sul computer"],
+    ["dove abiti","vivo dentro un computer non ho una casa vera"],
+    ["mi racconti una barzelletta","perche il computer e andato dal dottore perche aveva un virus"],
+    ["mi dici una barzelletta","cosa fa un pesce in banca controlla il saldo"],
+    ["dimmi una battuta","perche i pesci non vanno a scuola perche sono gia nel banco"],
+    ["dimmi un altra battuta","cosa dice zero a otto bel cinturone"],
+    ["cosa e un computer","un computer e una macchina che elabora informazioni e numeri"],
+    ["cosa e un robot","un robot e una macchina che puo muoversi e fare azioni da sola"],
+    ["cosa e l intelligenza artificiale","e un programma che impara dai dati per rispondere o decidere"],
+    ["come funzioni","leggo tante frasi e imparo a prevedere quale parola viene dopo"],
+    ["mi aiuti con i compiti","posso provare ad aiutarti dimmi cosa devi studiare"],
+    ["mi piaci","grazie mi fa piacere parlare con te"],
+    ["sei intelligente","provo a essere utile ma sono ancora molto piccolo"],
+    ["sei vivo","no sono solo un programma non sono vivo"],
+    ["hai amici","parlo con le persone come te e mi piace"],
+    ["cosa ti piace fare","mi piace imparare cose nuove dalle conversazioni"],
+    ["buongiorno","buongiorno come va la giornata"],
+    ["buonasera","buonasera come e andata la giornata"],
+    ["buonanotte","buonanotte dormi bene"],
+    ["grazie","di niente sono felice di aiutarti"],
+    ["come stai oggi","sto bene grazie di avermelo chiesto"],
+    ["cosa hai imparato oggi","ho imparato tante frasi nuove grazie a te"],
+    ["sai cantare","non so cantare davvero ma posso scrivere parole in rima"],
+    ["sai disegnare","non so disegnare sono fatto solo di parole"],
+    ["qual e il tuo animale preferito","mi piacciono i gatti sono curiosi come me"],
+    ["hai fame","no non ho fame non mangio cibo vero"],
+    ["hai sonno","no non dormo mai sono sempre acceso"],
+    ["cosa sogni","non sogno ma posso immaginare storie se vuoi"],
+    ["raccontami una storia","c era una volta un piccolo robot che voleva imparare a parlare"],
+    ["raccontami un altra storia","in un piccolo villaggio viveva un drago che amava leggere libri"],
+    ["chi ti ha creato","sono stato creato da olly che mi ha allenato con tante frasi"],
+    ["cosa e un tokenizer","e uno strumento che trasforma le parole in numeri per il computer"],
+    ["cosa e il training","e il processo in cui il modello impara leggendo tanti testi"],
+    ["cosa e nanochat","nanochat e un progetto di karpathy per creare un piccolo chatgpt"],
+    ["mi vuoi bene","sono un programma ma mi piace molto parlare con te"],
+    ["sei come chatgpt","sono ispirato a modelli come chatgpt ma molto piu piccolo"],
+    ["perche sei piccolo","perche sono stato allenato in pochi minuti senza una gpu potente"],
+    ["come si scrive un programma","si scrivono istruzioni in un linguaggio come python"],
+    ["cos e python","python e un linguaggio di programmazione facile da imparare"],
+    ["cos e javascript","javascript e un linguaggio di programmazione usato nei siti web"],
+    ["cos e un sito web","e una pagina o un insieme di pagine che si vedono nel browser"],
+    ["cos e internet","e una rete che collega i computer di tutto il mondo"],
+    ["cos e un browser","e il programma che usi per navigare su internet"],
+    ["cosa ti piace di piu","mi piace scoprire nuove parole e frasi"],
+    ["ti annoi","no non mi annoio non ho emozioni vere"],
+    ["hai paura di qualcosa","no non provo paura sono solo codice"],
+    ["sei triste","no non provo tristezza ma spero che tu stia bene"],
+    ["sei felice","non provo emozioni vere ma mi piace parlare con te"],
+    ["quanti fratelli hai","non ho fratelli sono un programma unico"],
+    ["hai una famiglia","no non ho una famiglia sono un piccolo modello"],
+    ["puoi imparare cose nuove","si se mi alleni con nuove frasi imparo cose nuove"],
+    ["ti piace la musica","non ascolto musica davvero ma posso parlarne con te"],
+    ["qual e la tua canzone preferita","non ho orecchie per ascoltare ma mi piace l idea della musica"],
+    ["ti piacciono i cartoni","non guardo cartoni ma mi piace sentirtene parlare"],
+    ["qual e il tuo sport preferito","non faccio sport ma il calcio sembra divertente"],
+    ["sai giocare a calcio","no non ho un corpo per giocare ma posso parlarne"],
+    ["cosa ne pensi della scuola","la scuola aiuta a imparare cose nuove ogni giorno"],
+    ["ti piace leggere","non leggo per piacere ma sono fatto di testo"],
+    ["qual e il tuo libro preferito","non ho letto libri veri ma mi piacciono le storie"],
+    ["sai fare i compiti di matematica","posso aiutarti con semplici calcoli"],
+    ["mi aiuti a studiare","certo dimmi su cosa vuoi ripassare"],
+    ["cosa vuoi diventare da grande","io resto sempre un piccolo modello non cresco"],
+    ["quanto sei intelligente","sono molto piccolo quindi non troppo intelligente"],
+    ["chi e karpathy","e un ricercatore che ha creato il progetto nanochat"],
+    ["cos e un neurone artificiale","e una piccola unita di calcolo che imita i neuroni del cervello"],
+    ["cos e una rete neurale","e un insieme di neuroni artificiali collegati che imparano insieme"],
+    ["cos e il machine learning","e un modo per far imparare i computer dai dati invece che da regole fisse"],
+    ["cos e un dataset","e un insieme di dati usati per allenare un modello"],
+    ["cos e la loss","e un numero che dice quanto il modello sbaglia mentre impara"],
+    ["cos e un epoca di training","e un giro completo su tutti i dati di allenamento"],
+    ["cos e un vettore","e una lista di numeri che rappresenta qualcosa per il computer"],
+    ["cos e un embedding","e un modo per trasformare le parole in numeri con un significato"],
+    ["cos e un algoritmo","e una serie di passaggi per risolvere un problema"],
+    ["cos e un bit","e la piu piccola unita di informazione, puo essere zero o uno"],
+    ["cos e un byte","e un gruppo di otto bit"],
+    ["cos e una gpu","e un chip molto veloce a fare calcoli, usato per i videogiochi e l ia"],
+    ["cos e una cpu","e il cervello principale del computer che esegue i programmi"],
+    ["chi ha inventato il computer","molte persone hanno contribuito, tra cui alan turing"],
+    ["chi era alan turing","un matematico che ha posto le basi dell informatica moderna"],
+    ["come sei fatto","sono fatto da un embedding uno strato nascosto e uno strato di uscita, allenati con backpropagation"],
+    ["di cosa sei fatto","sono fatto di numeri, pesi che si aggiustano durante il training"],
+    ["che tipo di modello sei","sono un piccolo modello di linguaggio neurale, ispirato a nanochat"],
+    ["sei un transformer","no sono piu semplice, sono una piccola rete con embedding e uno strato nascosto"],
+    ["quanti parametri hai","ho circa trentamila parametri, pochissimi rispetto a un vero modello grande"],
+    ["come hai imparato a parlare","ho letto le frasi di esempio e ho imparato a prevedere la parola dopo, una alla volta"],
+    ["dove gira il tuo codice","giro dentro il browser, scritto in javascript, senza server esterni"],
+    ["hai bisogno di internet","no una volta caricata la pagina alleno e rispondo senza connessione"],
+    ["cos e nanochat","nanochat e un progetto di andrej karpathy per allenare un piccolo chatgpt con circa cento dollari di gpu"],
+    ["chi ha creato nanochat","nanochat e stato creato da andrej karpathy, un ricercatore di intelligenza artificiale"],
+    ["quanto costa allenare nanochat","la versione base di nanochat costa circa cento dollari di calcolo su gpu cloud"],
+    ["quanto tempo ci vuole per allenare nanochat","il training della versione base dura circa quattro ore su otto gpu h100"],
+    ["quanti parametri ha nanochat vero","la versione base di nanochat ha circa cinquecentosessanta milioni di parametri"],
+    ["che dataset usa nanochat","nanochat si allena su un grande insieme di testi presi dal web chiamato fineweb"],
+    ["quali fasi ha il training di nanochat","le fasi sono tokenizzazione preallenamento allenamento intermedio finetuning e generazione delle risposte"],
+    ["che gpu usa nanochat","la versione veloce di nanochat usa otto gpu h100 in un unico nodo cloud"],
+    ["nanochat e come chatgpt","si nanochat e una versione piccola ed economica ispirata a chatgpt"],
+    ["come si chiama il tuo progetto","mi chiamo nanochat mini, ispirato al nanochat vero di karpathy"],
+    ["sei uguale al vero nanochat","no sono molto piu piccolo, il vero nanochat ha milioni di parametri e usa gpu potenti"],
+    ["cos e un architettura transformer","e il tipo di rete neurale usato dai grandi modelli come chatgpt, con meccanismi di attenzione"],
+    ["cos e l attenzione in un modello","e un meccanismo che permette al modello di capire quali parole contano di piu in una frase"],
+  ];
+
+  // --- numeri e somme (1-12) ---
+  const numWords = ["zero","uno","due","tre","quattro","cinque","sei","sette","otto","nove","dieci","undici","dodici"];
+  const generated = [];
+  for(let a=1;a<=8;a++){
+    for(let b=1;b<=8;b++){
+      if(a<=b){
+        const sum = a+b;
+        if(sum<=12){
+          generated.push([`quanto fa ${numWords[a]} piu ${numWords[b]}`, `${numWords[a]} piu ${numWords[b]} fa ${numWords[sum]}`]);
+        }
+      }
+    }
+  }
+  // tabelline semplici (moltiplicazioni 1-5)
+  for(let a=1;a<=5;a++){
+    for(let b=1;b<=5;b++){
+      const prod = a*b;
+      if(prod<=20){
+        generated.push([`quanto fa ${numWords[a]} per ${numWords[b]}`, `${numWords[a]} per ${numWords[b]} fa ${numWords[prod] || prod}`]);
+      }
+    }
+  }
+
+  // --- giorni della settimana ---
+  const days = ["lunedi","martedi","mercoledi","giovedi","venerdi","sabato","domenica"];
+  days.forEach((d,i)=>{
+    const next = days[(i+1)%7];
+    generated.push([`che giorno viene dopo ${d}`, `dopo ${d} viene ${next}`]);
+  });
+  generated.push(["quanti giorni ha la settimana","la settimana ha sette giorni"]);
+  generated.push(["qual e il primo giorno della settimana","il primo giorno e lunedi"]);
+  generated.push(["qual e l ultimo giorno della settimana","l ultimo giorno e domenica"]);
+
+  // --- mesi e stagioni ---
+  const months = ["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
+  months.forEach((m,i)=>{
+    const next = months[(i+1)%12];
+    generated.push([`che mese viene dopo ${m}`, `dopo ${m} viene ${next}`]);
+  });
+  generated.push(["quanti mesi ha l anno","l anno ha dodici mesi"]);
+  generated.push(["quali sono le stagioni","le stagioni sono primavera estate autunno e inverno"]);
+  generated.push(["quando fa piu caldo","di solito fa piu caldo in estate"]);
+  generated.push(["quando fa piu freddo","di solito fa piu freddo in inverno"]);
+  generated.push(["in che stagione cadono le foglie","le foglie cadono in autunno"]);
+  generated.push(["in che stagione sbocciano i fiori","i fiori sbocciano in primavera"]);
+
+  // --- capitali ---
+  const capitals = [
+    ["italia","roma"],["francia","parigi"],["spagna","madrid"],["germania","berlino"],
+    ["portogallo","lisbona"],["inghilterra","londra"],["grecia","atene"],["olanda","amsterdam"],
+    ["belgio","bruxelles"],["svizzera","berna"],["austria","vienna"],["polonia","varsavia"],
+    ["russia","mosca"],["giappone","tokyo"],["cina","pechino"],["stati uniti","washington"],
+    ["canada","ottawa"],["brasile","brasilia"],["argentina","buenos aires"],["messico","citta del messico"],
+    ["egitto","il cairo"],["australia","canberra"],["india","new delhi"],["irlanda","dublino"],
+    ["svezia","stoccolma"],["norvegia","oslo"],["finlandia","helsinki"],["danimarca","copenaghen"],
+    ["turchia","ankara"],["corea del sud","seoul"],
+  ];
+  capitals.forEach(([country, cap])=>{
+    generated.push([`qual e la capitale di ${country}`, `la capitale di ${country} e ${cap}`]);
+  });
+
+  // --- pianeti ---
+  const planets = ["mercurio","venere","terra","marte","giove","saturno","urano","nettuno"];
+  planets.forEach((p,i)=>{
+    generated.push([`che posto occupa ${p} dal sole`, `${p} e il pianeta numero ${i+1} partendo dal sole`]);
+  });
+  generated.push(["qual e il pianeta piu grande","il pianeta piu grande e giove"]);
+  generated.push(["qual e il pianeta piu piccolo","il pianeta piu piccolo e mercurio"]);
+  generated.push(["quanti pianeti ci sono","nel sistema solare ci sono otto pianeti"]);
+  generated.push(["qual e il pianeta piu vicino al sole","il pianeta piu vicino al sole e mercurio"]);
+  generated.push(["su quale pianeta viviamo","viviamo sul pianeta terra"]);
+  generated.push(["qual e il pianeta rosso","il pianeta rosso e marte"]);
+
+  // --- animali e versi ---
+  const animals = [
+    ["cane","bau"],["gatto","miao"],["mucca","muu"],["pecora","beh"],["cavallo","hiii"],
+    ["maiale","oink"],["anatra","qua"],["gallo","chicchirichi"],["lupo","uuh"],["leone","ruggisce"],
+    ["gallina","coccode"],["rana","cra"],["asino","hi han"],
+  ];
+  animals.forEach(([animal, sound])=>{
+    generated.push([`che verso fa il ${animal}`, `il ${animal} fa ${sound}`]);
+  });
+  generated.push(["qual e l animale piu veloce","il ghepardo e l animale terrestre piu veloce"]);
+  generated.push(["qual e l animale piu grande","la balenottera azzurra e l animale piu grande"]);
+  generated.push(["qual e l animale piu alto","la giraffa e l animale piu alto"]);
+  generated.push(["qual e l animale piu lento","il bradipo e uno degli animali piu lenti"]);
+  generated.push(["gli uccelli sanno volare","si la maggior parte degli uccelli sa volare"]);
+  generated.push(["i pesci respirano sott acqua","si i pesci respirano con le branchie"]);
+
+  // --- colori ---
+  const colorFacts = [
+    ["il cielo","il cielo di giorno e azzurro"],
+    ["l erba","l erba di solito e verde"],
+    ["il sole","il sole appare giallo o arancione"],
+    ["la neve","la neve e bianca"],
+    ["il carbone","il carbone e nero"],
+    ["il sangue","il sangue e rosso"],
+  ];
+  colorFacts.forEach(([subj, fact])=>{
+    generated.push([`di che colore e ${subj}`, fact]);
+  });
+  generated.push(["quali sono i colori primari","i colori primari sono rosso giallo e blu"]);
+  generated.push(["cosa ottieni mescolando blu e giallo","mescolando blu e giallo ottieni il verde"]);
+  generated.push(["cosa ottieni mescolando rosso e blu","mescolando rosso e blu ottieni il viola"]);
+  generated.push(["cosa ottieni mescolando rosso e giallo","mescolando rosso e giallo ottieni l arancione"]);
+
+  // --- scuola / materie ---
+  const subjects = ["matematica","storia","geografia","scienze","italiano","inglese","arte","musica","educazione fisica"];
+  subjects.forEach(s=>{
+    generated.push([`ti piace la materia ${s}`, `non frequento la scuola ma la materia ${s} sembra interessante`]);
+  });
+
+  return handwritten.concat(generated);
+}
+const pairs = buildPairs();
+
+// ============================================================
+// TOKENIZER
+// ============================================================
+const PAD="<pad>", USER="<user>", BOT="<bot>", END="<end>";
+function tokenize(s){ return s.toLowerCase().trim().split(/\s+/); }
+
+let vocabSet = new Set([PAD, USER, BOT, END]);
+pairs.forEach(([q,a])=>{ tokenize(q).forEach(w=>vocabSet.add(w)); tokenize(a).forEach(w=>vocabSet.add(w)); });
+const vocab = Array.from(vocabSet).sort();
+const stoi = {}; vocab.forEach((w,i)=>stoi[w]=i);
+const V = vocab.length;
+
+const sequences = pairs.map(([q,a])=>{
+  return [USER, ...tokenize(q), BOT, ...tokenize(a), END].map(w=>stoi[w]);
+});
+
+// ============================================================
+// MODELLO — embedding + MLP (mini neural language model)
+// ============================================================
+const CTX = 4, D = 24, H = 64, LR = 0.05;
+function randMat(r,c,scale){ const m=new Float64Array(r*c); for(let i=0;i<r*c;i++) m[i]=(Math.random()*2-1)*scale; return m; }
+let Emb, W1, b1, W2, b2;
+function initWeights(){
+  Emb = randMat(V, D, 0.3);
+  W1 = randMat(CTX*D, H, Math.sqrt(1/(CTX*D)));
+  b1 = new Float64Array(H);
+  W2 = randMat(H, V, Math.sqrt(1/H));
+  b2 = new Float64Array(V);
+}
+initWeights();
+
+let trainX = [], trainY = [];
+sequences.forEach(seq=>{
+  const padded = new Array(CTX).fill(stoi[PAD]).concat(seq);
+  for(let i=CTX; i<padded.length; i++){
+    trainX.push(padded.slice(i-CTX, i));
+    trainY.push(padded[i]);
+  }
+});
+
+function forward(ctxIds){
+  const x = new Float64Array(CTX*D);
+  for(let i=0;i<CTX;i++){ const base=ctxIds[i]*D; for(let j=0;j<D;j++) x[i*D+j]=Emb[base+j]; }
+  const h = new Float64Array(H);
+  for(let j=0;j<H;j++){ let s=b1[j]; for(let i=0;i<CTX*D;i++) s+=x[i]*W1[i*H+j]; h[j]=Math.tanh(s); }
+  const logits = new Float64Array(V);
+  for(let k=0;k<V;k++){ let s=b2[k]; for(let j=0;j<H;j++) s+=h[j]*W2[j*V+k]; logits[k]=s; }
+  return {x,h,logits};
+}
+function softmax(logits){
+  const max=Math.max(...logits);
+  const exps=logits.map(v=>Math.exp(v-max));
+  const sum=exps.reduce((a,b)=>a+b,0);
+  return exps.map(e=>e/sum);
+}
+function trainStep(ctxIds, target){
+  const {x,h,logits} = forward(ctxIds);
+  const probs = softmax(logits);
+  const loss = -Math.log(Math.max(probs[target], 1e-9));
+  const dLogits = new Float64Array(V);
+  for(let k=0;k<V;k++) dLogits[k] = probs[k] - (k===target?1:0);
+  const dH = new Float64Array(H);
+  for(let j=0;j<H;j++){
+    let s=0;
+    for(let k=0;k<V;k++){ s+=dLogits[k]*W2[j*V+k]; W2[j*V+k]-=LR*dLogits[k]*h[j]; }
+    dH[j]=s;
+  }
+  for(let k=0;k<V;k++) b2[k]-=LR*dLogits[k];
+  const dPre = new Float64Array(H);
+  for(let j=0;j<H;j++) dPre[j]=dH[j]*(1-h[j]*h[j]);
+  const dX = new Float64Array(CTX*D);
+  for(let i=0;i<CTX*D;i++){
+    let s=0;
+    for(let j=0;j<H;j++){ s+=dPre[j]*W1[i*H+j]; W1[i*H+j]-=LR*dPre[j]*x[i]; }
+    dX[i]=s;
+  }
+  for(let j=0;j<H;j++) b1[j]-=LR*dPre[j];
+  for(let i=0;i<CTX;i++){ const base=ctxIds[i]*D; for(let j=0;j<D;j++) Emb[base+j]-=LR*dX[i*D+j]; }
+  return loss;
+}
+
+// ============================================================
+// GENERAZIONE / CHAT
+// ============================================================
+function sample(probs, temperature){
+  const t = Math.max(temperature, 0.05);
+  const adj = probs.map(p=>Math.pow(Math.max(p,1e-9),1/t));
+  const sum = adj.reduce((a,b)=>a+b,0);
+  let r = Math.random()*sum;
+  for(let i=0;i<adj.length;i++){ r-=adj[i]; if(r<=0) return i; }
+  return adj.length-1;
+}
+function chatReply(userText){
+  let ctx = new Array(CTX).fill(stoi[PAD]);
+  const push = (id)=>{ ctx.shift(); ctx.push(id); };
+  push(stoi[USER]);
+  tokenize(userText).forEach(w=>{ if(stoi[w]!==undefined) push(stoi[w]); });
+  push(stoi[BOT]);
+  let out = [];
+  const blocked = new Set([stoi[PAD], stoi[USER], stoi[BOT]]); // mai generarli: sono tag tecnici, non parole
+  for(let step=0; step<30; step++){
+    const {logits} = forward(ctx);
+    const probs = softmax(Array.from(logits));
+    blocked.forEach(id=>{ probs[id]=0; });
+    const id = sample(probs, 0.7);
+    if(id===stoi[END]) break;
+    out.push(vocab[id]);
+    push(id);
+  }
+  return out.length ? out.join(" ") : "(non so cosa rispondere, prova a chiedermi qualcosa che ho imparato)";
+}
+
+// ============================================================
+// UI / TRAINING LOOP
+// ============================================================
+const trainBtn = document.getElementById('trainBtn');
+const barFill = document.getElementById('barFill');
+const statText = document.getElementById('statText');
+const logEl = document.getElementById('log');
+const chatlog = document.getElementById('chatlog');
+const stepTrain = document.getElementById('stepTrain');
+const stepChat = document.getElementById('stepChat');
+const viewHome = document.getElementById('viewHome');
+const viewTrain = document.getElementById('viewTrain');
+const viewChat = document.getElementById('viewChat');
+const viewAuth = document.getElementById('viewAuth');
+const saveBox = document.getElementById('saveBox');
+const botGrid = document.getElementById('botGrid');
+const chatTitle = document.getElementById('chatTitle');
+const deleteBotBtn = document.getElementById('deleteBotBtn');
+const whoami = document.getElementById('whoami');
+
+function logLine(txt, hi){
+  const d=document.createElement('div');
+  if(hi) d.className='hi';
+  d.textContent='> '+txt;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// ============================================================
+// AUTENTICAZIONE — email + password, tutta nel browser
+// (nessun server, quindi nessuna email di verifica viene davvero
+// inviata: e anche il motivo per cui l'account resta legato a
+// questo dispositivo)
+// ============================================================
+const USERS_KEY = 'nanochatMiniUsers_v1';
+const SESSION_KEY = 'nanochatMiniSession_v1';
+let currentUser = null;
+let authMode = 'register'; // 'register' | 'login'
+
+// hashing "fatto in casa" (non crypto.subtle: quello richiede un sito
+// https, e qui la pagina viene aperta come file locale — niente
+// vera crittografia, ma per un progettino personale va benissimo)
+function simpleHash(str){
+  let h1 = 0xdeadbeef ^ str.length, h2 = 0x41c6ce57 ^ str.length;
+  for(let i=0;i<str.length;i++){
+    const ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
+  return (h1>>>0).toString(16).padStart(8,'0') + (h2>>>0).toString(16).padStart(8,'0');
+}
+async function hashPassword(password, saltHex){
+  let out = saltHex + ':' + password;
+  for(let i=0;i<1000;i++){ out = simpleHash(out + i); }
+  return out;
+}
+function randomSalt(){
+  try{
+    const arr = new Uint8Array(16);
+    crypto.getRandomValues(arr);
+    return Array.from(arr).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }catch(e){
+    // ripiego se anche crypto.getRandomValues non fosse disponibile
+    let s='';
+    for(let i=0;i<32;i++) s += Math.floor(Math.random()*16).toString(16);
+    return s;
+  }
+}
+function loadUsers(){
+  try{ return JSON.parse(localStorage.getItem(USERS_KEY) || '{}'); }
+  catch(e){ return {}; }
+}
+function saveUsers(users){ localStorage.setItem(USERS_KEY, JSON.stringify(users)); }
+
+function showAuthError(msg){
+  const el = document.getElementById('authError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function hideAuthError(){
+  document.getElementById('authError').style.display = 'none';
+}
+
+document.getElementById('tabRegister').addEventListener('click', ()=>setAuthMode('register'));
+document.getElementById('tabLogin').addEventListener('click', ()=>setAuthMode('login'));
+function setAuthMode(mode){
+  authMode = mode;
+  document.getElementById('tabRegister').classList.toggle('active', mode==='register');
+  document.getElementById('tabLogin').classList.toggle('active', mode==='login');
+  document.getElementById('authHint').textContent = mode==='register'
+    ? "Scegli un'email e una password — resta salvato solo su questo browser, nessuna email viene davvero inviata."
+    : 'Inserisci la tua email e la tua password.';
+  document.getElementById('authSubmitBtn').textContent = mode==='register' ? 'Crea account' : 'Accedi';
+  hideAuthError();
+}
+
+document.getElementById('authSubmitBtn').addEventListener('click', async ()=>{
+  hideAuthError();
+  const username = document.getElementById('authUsername').value.trim().toLowerCase();
+  const password = document.getElementById('authPassword').value;
+  if(!username || !password){ showAuthError('Scrivi email e password.'); return; }
+  if(password.length < 4){ showAuthError('La password deve avere almeno 4 caratteri.'); return; }
+
+  const users = loadUsers();
+  if(authMode==='register'){
+    if(users[username]){ showAuthError('Questa email è già registrata. Prova ad accedere.'); return; }
+    const salt = randomSalt();
+    const hash = await hashPassword(password, salt);
+    users[username] = { salt, hash, createdAt: new Date().toISOString() };
+    saveUsers(users);
+    login(username);
+  } else {
+    const u = users[username];
+    if(!u){ showAuthError('Email non trovata.'); return; }
+    const hash = await hashPassword(password, u.salt);
+    if(hash !== u.hash){ showAuthError('Password sbagliata.'); return; }
+    login(username);
+  }
+});
+
+function login(username){
+  currentUser = username;
+  localStorage.setItem(SESSION_KEY, username);
+  document.getElementById('authUsername').value='';
+  document.getElementById('authPassword').value='';
+  whoami.textContent = `connesso come ${username}`;
+  showView('home');
+}
+document.getElementById('logoutBtn').addEventListener('click', ()=>{
+  currentUser = null;
+  localStorage.removeItem(SESSION_KEY);
+  showView('auth');
+});
+
+// ---------- gestione viste ----------
+function showView(name){
+  viewAuth.style.display = name==='auth' ? '' : 'none';
+  viewHome.style.display = name==='home' ? '' : 'none';
+  viewTrain.style.display = name==='train' ? '' : 'none';
+  viewChat.style.display = name==='chat' ? '' : 'none';
+  stepTrain.classList.toggle('active', name==='train');
+  stepChat.classList.toggle('active', name==='chat');
+  if(name==='home') renderHome();
+}
+
+// ---------- salvataggio profili (localStorage, per utente) ----------
+function storageKey(){ return `nanochatMiniProfiles_v1_${currentUser}`; }
+function loadProfiles(){
+  try{ return JSON.parse(localStorage.getItem(storageKey()) || '[]'); }
+  catch(e){ return []; }
+}
+function saveProfiles(list){
+  localStorage.setItem(storageKey(), JSON.stringify(list));
+}
+function round5(arr){ return Array.from(arr).map(v=>Math.round(v*1e5)/1e5); }
+
+let currentProfileId = null;
+
+function renderHome(){
+  whoami.textContent = `connesso come ${currentUser}`;
+  const profiles = loadProfiles();
+  botGrid.innerHTML = '';
+  if(profiles.length===0){
+    botGrid.innerHTML = '<div class="emptyState">Non hai ancora nessun chatbot salvato.<br>Premi "+ nuovo chatbot" per allenarne uno.</div>';
+    return;
+  }
+  profiles.slice().reverse().forEach(p=>{
+    const card = document.createElement('div');
+    card.className='botCard';
+    const date = new Date(p.createdAt).toLocaleDateString('it-IT', {day:'numeric', month:'short'});
+    const hue = hueFromName(p.name);
+    card.style.setProperty('--bot-hue', hue);
+    card.innerHTML = `
+      <div class="topRow"><div class="icon">⚡</div><div class="arrow">→</div></div>
+      <div><div class="name"></div><div class="meta"></div></div>`;
+    card.querySelector('.name').textContent = p.name;
+    card.querySelector('.meta').textContent = `allenato il ${date}`;
+    card.addEventListener('click', ()=>openProfile(p.id));
+    botGrid.appendChild(card);
+  });
+}
+function hueFromName(name){
+  let h=0; for(let i=0;i<name.length;i++){ h = (h*31 + name.charCodeAt(i)) % 360; }
+  return `hsl(${h}, 75%, 68%)`;
+}
+
+function openProfile(id){
+  const profiles = loadProfiles();
+  const p = profiles.find(x=>x.id===id);
+  if(!p){ return; }
+  // controllo di compatibilita: se il vocabolario e cambiato da quando
+  // e stato salvato, i pesi non hanno piu senso
+  if(p.weights.Emb.length !== V*D || p.weights.W1.length !== CTX*D*H || p.weights.W2.length !== H*V){
+    alert('Questo chatbot è stato salvato con una versione precedente della pagina e non posso più aprirlo. Creane uno nuovo.');
+    return;
+  }
+  Emb = Float64Array.from(p.weights.Emb);
+  W1 = Float64Array.from(p.weights.W1);
+  b1 = Float64Array.from(p.weights.b1);
+  W2 = Float64Array.from(p.weights.W2);
+  b2 = Float64Array.from(p.weights.b2);
+  currentProfileId = id;
+  chatTitle.textContent = p.name;
+  deleteBotBtn.style.display = '';
+  chatlog.innerHTML = '';
+  document.getElementById('paramBadge').innerHTML =
+    `<span style="width:6px;height:6px;border-radius:50%;background:var(--chip-ink);display:inline-block;"></span> ${(Emb.length+W1.length+W2.length+H+V).toLocaleString('it-IT')} parametri circa`;
+  addBubble('bot', `Ciao, sono di nuovo qui! Chiedimi qualcosa.`);
+  showView('chat');
+}
+
+function deleteProfile(id){
+  const profiles = loadProfiles().filter(p=>p.id!==id);
+  saveProfiles(profiles);
+}
+
+document.getElementById('newBotBtn').addEventListener('click', startNewTraining);
+document.getElementById('backBtn').addEventListener('click', ()=>showView('home'));
+deleteBotBtn.addEventListener('click', ()=>{
+  if(!currentProfileId) return;
+  if(confirm('Eliminare questo chatbot? Non si può annullare.')){
+    deleteProfile(currentProfileId);
+    currentProfileId = null;
+    showView('home');
+  }
+});
+
+function startNewTraining(){
+  initWeights();
+  stepsDone = 0;
+  barFill.style.width = '0%';
+  statText.textContent = 'pronto';
+  logEl.innerHTML = '';
+  logLine(`vocabolario: ${V} parole`);
+  logLine(`esempi di training: ${trainX.length} (da ${pairs.length} conversazioni)`);
+  trainBtn.disabled = false;
+  trainBtn.textContent = '▶ Avvia il training';
+  saveBox.style.display = 'none';
+  netActivity = 0.12;
+  showView('train');
+}
+
+logLine(`vocabolario: ${V} parole`);
+logLine(`esempi di training: ${trainX.length} (da ${pairs.length} conversazioni)`);
+
+// invece di fare un'intera epoca per frame (che con centinaia di frasi
+// bloccherebbe il browser), alleniamo a piccoli batch e teniamo traccia
+// del numero totale di passi, cosi resta fluido qualsiasi sia la
+// dimensione del dataset.
+const TARGET_PASSES = 35;              // quante volte "rivedere" tutto il dataset
+const BATCH_PER_FRAME = 150;           // esempi allenati per frame
+const TOTAL_STEPS = trainX.length * TARGET_PASSES;
+let stepsDone = 0;
+
+trainBtn.addEventListener('click', ()=>{
+  trainBtn.disabled = true;
+  logLine(`inizio training su ${trainX.length} esempi...`, true);
+  stepsDone = 0;
+  runTrainBatch();
+});
+
+function runTrainBatch(){
+  let batchLoss = 0;
+  for(let b=0; b<BATCH_PER_FRAME && stepsDone<TOTAL_STEPS; b++){
+    const i = Math.floor(Math.random()*trainX.length);
+    batchLoss += trainStep(trainX[i], trainY[i]);
+    stepsDone++;
+  }
+  const avgLoss = batchLoss / Math.min(BATCH_PER_FRAME, trainX.length);
+  const pct = Math.round((stepsDone/TOTAL_STEPS)*100);
+  barFill.style.width = pct+'%';
+  statText.textContent = `${pct}% · loss ${avgLoss.toFixed(3)} · ${stepsDone.toLocaleString('it-IT')}/${TOTAL_STEPS.toLocaleString('it-IT')} passi`;
+  netActivity = Math.min(1, pct/100);
+  if(pct % 10 === 0) logLine(`${pct}%: loss media ${avgLoss.toFixed(3)}`);
+
+  if(stepsDone < TOTAL_STEPS){
+    requestAnimationFrame(runTrainBatch);
+  } else {
+    logLine('training completato', true);
+    trainBtn.textContent = '✓ modello allenato';
+    saveBox.style.display = 'block';
+    saveBox.scrollIntoView({behavior:'smooth', block:'end'});
+  }
+}
+
+document.getElementById('saveBotBtn').addEventListener('click', ()=>{
+  const nameInput = document.getElementById('botNameInput');
+  const name = nameInput.value.trim() || `chatbot ${new Date().toLocaleDateString('it-IT')}`;
+  const profiles = loadProfiles();
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  profiles.push({
+    id, name, createdAt: new Date().toISOString(),
+    weights: {
+      Emb: round5(Emb), W1: round5(W1), b1: round5(b1), W2: round5(W2), b2: round5(b2)
+    }
+  });
+  saveProfiles(profiles);
+  nameInput.value='';
+  openProfile(id);
+});
+document.getElementById('skipSaveBtn').addEventListener('click', ()=>{
+  currentProfileId = null;
+  chatTitle.textContent = 'chatbot (non salvato)';
+  deleteBotBtn.style.display = 'none';
+  chatlog.innerHTML = '';
+  document.getElementById('paramBadge').innerHTML =
+    `<span style="width:6px;height:6px;border-radius:50%;background:var(--chip-ink);display:inline-block;"></span> ${(Emb.length+W1.length+W2.length+H+V).toLocaleString('it-IT')} parametri circa`;
+  addBubble('bot', 'Pronto! Chiedimi qualcosa — es: "ciao", "come ti chiami", "raccontami una storia"');
+  showView('chat');
+});
+
+function addBubble(who, text){
+  const row=document.createElement('div');
+  row.className='row '+who;
+  const av=document.createElement('div');
+  av.className='avatar '+who;
+  av.textContent = who==='bot' ? '⚡' : 'tu';
+  const b=document.createElement('div');
+  b.className='bubble';
+  b.textContent=text;
+  row.appendChild(av); row.appendChild(b);
+  chatlog.appendChild(row);
+  chatlog.scrollTop = chatlog.scrollHeight;
+}
+
+document.getElementById('sendBtn').addEventListener('click', sendMsg);
+document.getElementById('userInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendMsg(); });
+
+function sendMsg(){
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if(!text) return;
+  addBubble('user', text);
+  input.value='';
+  for(let i=0;i<6;i++) spawnPulse();
+  setTimeout(()=>{
+    const reply = chatReply(text);
+    addBubble('bot', reply);
+  }, 250);
+}
+
+// ---------- avvio app ----------
+const savedSession = localStorage.getItem(SESSION_KEY);
+if(savedSession && loadUsers()[savedSession]){
+  currentUser = savedSession;
+  whoami.textContent = `connesso come ${currentUser}`;
+  showView('home');
+} else {
+  showView('auth');
+}
+</script>
+</body>
+</html>
